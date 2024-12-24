@@ -26,6 +26,17 @@ type ServerConfig struct {
 	Port int
 }
 
+// NewConfig creates a new instance of Config from the given CLI context.
+//
+// It extracts settings for database, RPC server, HTTP server, and metrics server
+// from the provided CLI context flags. These settings include host, port, name,
+// user, and password for the database, as well as host and port for the servers.
+//
+// Parameters:
+//   - ctx: A cli.Context containing the CLI flag values.
+//
+// Returns:
+//   - Config: A Config instance populated with values extracted from the CLI context.
 func NewConfig(ctx *cli.Context) Config {
 	return Config{
 		Migrations: ctx.String(flags.MigrationsFlag.Name),

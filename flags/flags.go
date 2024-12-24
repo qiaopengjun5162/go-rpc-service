@@ -43,6 +43,7 @@ var (
 		Value:    7214,
 		Required: true,
 	}
+	// HttpHostFlag HTTP Service
 	HttpHostFlag = &cli.StringFlag{
 		Name:     "http-host",
 		Usage:    "The host of the rest api",
@@ -106,6 +107,11 @@ var requireFlags = []cli.Flag{
 
 var optionalFlags = []cli.Flag{}
 
+// init initializes the Flags variable by combining required and optional flags.
+//
+// It appends the optionalFlags slice to the requireFlags slice and assigns
+// the result to the Flags variable. This sets up the complete set of CLI flags
+// that will be available for the application.
 func init() {
 	Flags = append(requireFlags, optionalFlags...)
 }

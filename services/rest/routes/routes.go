@@ -10,7 +10,14 @@ type Routes struct {
 	svc    service.Service
 }
 
-// NewRoutes ... Construct a new route handler instance
+// NewRoutes creates a new Routes object with the given chi router and service.
+//
+// Parameters:
+//   - r: The chi router to use for this Routes object.
+//   - svc: The service to use for this Routes object.
+//
+// Returns:
+//   - A new Routes object with the given router and service.
 func NewRoutes(r *chi.Mux, svc service.Service) Routes {
 	return Routes{
 		router: r,

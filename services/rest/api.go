@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/qiaopengjun5162/go-rpc-service/services/rest/routes"
 	"net"
 	"strconv"
 	"sync/atomic"
@@ -17,11 +16,12 @@ import (
 	"github.com/qiaopengjun5162/go-rpc-service/common/httputil"
 	"github.com/qiaopengjun5162/go-rpc-service/config"
 	"github.com/qiaopengjun5162/go-rpc-service/database"
+	"github.com/qiaopengjun5162/go-rpc-service/services/rest/routes"
 	"github.com/qiaopengjun5162/go-rpc-service/services/rest/service"
 )
 
 const (
-	HealthPath          = "/healthz"
+	HealthPath          = "/health"
 	SupportChainV1Path  = "/api/v1/support_chain"
 	WalletAddressV1Path = "/api/v1/wallet_address"
 )
@@ -38,6 +38,19 @@ type API struct {
 	stopped   atomic.Bool
 }
 
+// NewApi initializes a new API instance from the given configuration.
+//
+// It creates a new API instance and calls `initFromConfig` to initialize the
+// instance from the given configuration. If the initialization fails, it stops
+// the API instance and joins the error with the stop error.
+//
+// Parameters:
+//   - ctx: A context.Context that controls the initialization timeout.
+//   - cfg: A pointer to the configuration to use for initialization.
+//
+// Returns:
+//   - *API: A pointer to the initialized API instance if successful.
+//   - error: An error if the initialization fails, or nil if successful.
 func NewApi(ctx context.Context, cfg *config.Config) (*API, error) {
 	out := &API{}
 	if err := out.initFromConfig(ctx, cfg); err != nil {
@@ -46,6 +59,25 @@ func NewApi(ctx context.Context, cfg *config.Config) (*API, error) {
 	return out, nil
 }
 
+// initFromConfig initializes the API instance from the given configuration.
+//
+// It first calls `initDB` to initialize the database connection from the given
+// configuration. If the initialization fails, it returns the error joined with
+// the stop error.
+//
+// Then it calls `initRouter` to initialize the API router from the given
+// configuration.
+//
+// Finally, it calls `startServer` to start the API server from the given
+// configuration. If the start fails, it returns the error joined with the stop
+// error.
+//
+// Parameters:
+//   - ctx: A context.Context that controls the initialization timeout.
+//   - cfg: A pointer to the configuration to use for initialization.
+//
+// Returns:
+//   - error: An error if the initialization fails, or nil if successful.
 func (a *API) initFromConfig(ctx context.Context, cfg *config.Config) error {
 	if err := a.initDB(ctx, cfg); err != nil {
 		return fmt.Errorf("failed to init DB: %w", err)
@@ -57,6 +89,16 @@ func (a *API) initFromConfig(ctx context.Context, cfg *config.Config) error {
 	return nil
 }
 
+// initRouter initializes the API router with the specified server configuration.
+//
+// It creates a new instance of the Validator and HandleSrv to set up the service
+// layer. A new chi router is created and configured with middleware for timeout,
+// recovery, and heartbeat. It also sets up HTTP GET endpoints for support chain
+// and wallet address using the provided routes.
+//
+// Parameters:
+//   - conf: The server configuration for initializing the router.
+//   - cfg: The application configuration used to set up the service.
 func (a *API) initRouter(conf config.ServerConfig, cfg *config.Config) {
 	v := new(service.Validator)
 
@@ -75,6 +117,17 @@ func (a *API) initRouter(conf config.ServerConfig, cfg *config.Config) {
 	a.router = apiRouter
 }
 
+// initDB initializes the database connection from the given configuration.
+//
+// It creates a new instance of the DB from the given configuration. If the
+// initialization fails, it logs the error and returns it.
+//
+// Parameters:
+//   - ctx: A context.Context that controls the initialization timeout.
+//   - cfg: A pointer to the configuration to use for initialization.
+//
+// Returns:
+//   - error: An error if the initialization fails, or nil if successful.
 func (a *API) initDB(ctx context.Context, cfg *config.Config) error {
 	initDb, err := database.NewDB(ctx, cfg.Database)
 	if err != nil {
@@ -85,10 +138,28 @@ func (a *API) initDB(ctx context.Context, cfg *config.Config) error {
 	return nil
 }
 
+// Start starts the API server.
+//
+// Parameters:
+//   - ctx: A context.Context that controls the start timeout.
+//
+// Returns:
+//   - error: An error if the start fails, or nil if successful.
 func (a *API) Start(ctx context.Context) error {
 	return nil
 }
 
+// Stop stops the API service.
+//
+// It stops the API server and closes the database connection.
+// If any of the shutdown operations fail, it joins the errors together
+// and returns the resulting error.
+//
+// Parameters:
+//   - ctx: A context.Context that controls the shutdown timeout.
+//
+// Returns:
+//   - error: An error if any of the shutdown operations fail, or nil if successful.
 func (a *API) Stop(ctx context.Context) error {
 	var result error
 	if a.apiServer != nil {
@@ -106,6 +177,17 @@ func (a *API) Stop(ctx context.Context) error {
 	return result
 }
 
+// startServer starts the API server with the given server configuration.
+//
+// It constructs the server address from the provided host and port within
+// the serverConfig. Then, it uses the router to initialize and start the
+// HTTP server. If the server fails to start, it returns an error.
+//
+// Parameters:
+//   - serverConfig: The ServerConfig containing the host and port for the API server.
+//
+// Returns:
+//   - error: An error if the server fails to start, or nil if successful.
 func (a *API) startServer(serverConfig config.ServerConfig) error {
 	log.Debug("API server listening...", "port", serverConfig.Port)
 	addr := net.JoinHostPort(serverConfig.Host, strconv.Itoa(serverConfig.Port))
@@ -118,6 +200,12 @@ func (a *API) startServer(serverConfig config.ServerConfig) error {
 	return nil
 }
 
+// Stopped returns a boolean indicating whether the API service has been stopped.
+//
+// It safely loads the stopped atomic boolean value and returns its value.
+//
+// Returns:
+//   - bool: True if the API service has been stopped, false otherwise.
 func (a *API) Stopped() bool {
 	return a.stopped.Load()
 }

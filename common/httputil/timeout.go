@@ -16,6 +16,8 @@ type HTTPTimeouts struct {
 	IdleTimeout       time.Duration
 }
 
+// WithTimeouts returns an HTTPOption that sets the read, read header, write,
+// and idle timeouts on an HTTPServer using the provided HTTPTimeouts struct.
 func WithTimeouts(timeouts HTTPTimeouts) HTTPOption {
 	return func(s *HTTPServer) error {
 		s.srv.ReadTimeout = timeouts.ReadTimeout
