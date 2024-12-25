@@ -1,0 +1,11 @@
+flowchart TD
+    A[开始] --> B[创建 resty 客户端]
+    B --> C[设置基础 URL]
+    C --> D[注册响应处理函数]
+    D --> E{状态码 >= 400?}
+    E -->|Yes| F[返回错误信息]
+    E -->|No| G[打印请求信息]
+    G --> H[结束]
+    F --> H
+
+NewWalletClient
